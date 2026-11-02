@@ -1,0 +1,34 @@
+name: Validate source
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Inspect publication inputs
+        run: python3 scripts/check-public-tree.py
+      - name: Check shell scripts and resources
+        run: |
+          bash -n native/scripts/build.sh native/scripts/install-local.sh
+          sh -n native/Tests/BandejaCoreTests/run-standalone.sh
+          plutil -lint native/Resources/Info.plist
+          cupstestppd -q native/Resources/BandejaPDF.ppd
+      - name: Compile native executables
+        working-directory: native
+        run: swift build --configuration release --arch arm64
+      - name: Prepare isolated PostScript test dependency
+        run: brew list ghostscript >/dev/null 2>&1 || brew install ghostscript
+      - name: Run core tests without installing a printer
+        working-directory: native
+        run: BANDEJA_TEST_GS="$(brew --prefix ghostscript)/bin/gs" swift test

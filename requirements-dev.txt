@@ -1,0 +1,6 @@
+# Optional PDF inspection and integration tools; not product dependencies.
+# Versions used for local validation with Python 3.12.
+reportlab==4.4.9
+pypdf==6.10.0
+pypdfium2==5.14.0
+Pillow==12.3.0
